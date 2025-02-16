@@ -9,6 +9,7 @@ void convertToRGB(uint32_t argb, int rgb[3])
     rgb[2] = (argb >> 16) & 0xFF; // Red
 }
 
+// Função para verificar se um pixel é preto (para não acender)
 int isBlack(int rgb[3])
 {
     if (rgb[0] == 0 && rgb[1] == 0 && rgb[2] == 0)
@@ -18,7 +19,7 @@ int isBlack(int rgb[3])
     return 0; // Caso contrário, retorna 0 (ligado)
 }
 
-// Converte a matriz de pixels piskel para a matriz de pixels RGB
+// Converte a matriz de pixels do piskel para a matriz de pixels RGB
 void convertPiskelToMatriz(uint32_t piskel_matriz[1][25], int pixelDraw[5][5], int pixelRGB[5][5][3])
 {
     // Array de cores e sinalização se o LED está ligado

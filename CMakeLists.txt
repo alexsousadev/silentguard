@@ -42,37 +42,37 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(microphone_dma C CXX ASM)
+project(SilentGuard C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(microphone_dma microphone_dma.c display/ssd1306.c)
+add_executable(SilentGuard SilentGuard.c display/ssd1306.c)
 
-pico_set_program_name(microphone_dma "microphone_dma")
-pico_set_program_version(microphone_dma "0.1")
+pico_set_program_name(SilentGuard "SilentGuard")
+pico_set_program_version(SilentGuard "0.1")
 
 # Generate PIO header
-pico_generate_pio_header(microphone_dma ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
+pico_generate_pio_header(SilentGuard ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(microphone_dma 0)
-pico_enable_stdio_usb(microphone_dma 1)
+pico_enable_stdio_uart(SilentGuard 0)
+pico_enable_stdio_usb(SilentGuard 1)
 
 # Add the standard library to the build
-target_link_libraries(microphone_dma
+target_link_libraries(SilentGuard
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(microphone_dma PRIVATE
+target_include_directories(SilentGuard PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/inc
 )
 
 # Add any user requested libraries
-target_link_libraries(microphone_dma 
+target_link_libraries(SilentGuard
         hardware_dma
         hardware_timer
         hardware_adc
@@ -82,5 +82,4 @@ target_link_libraries(microphone_dma
         hardware_pwm
         )
 
-pico_add_extra_outputs(microphone_dma)
-
+pico_add_extra_outputs(SilentGuard)

@@ -2,9 +2,11 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 
-#define WIDTH 128
-#define HEIGHT 64
+// Definições do display
+#define WIDTH 128 // Largura
+#define HEIGHT 64 // Altura
 
+// Comandos SSD1306
 typedef enum
 {
   SET_CONTRAST = 0x81,
@@ -26,6 +28,7 @@ typedef enum
   SET_CHARGE_PUMP = 0x8D
 } ssd1306_command_t;
 
+// Estrutura do display SSD1306
 typedef struct
 {
   uint8_t width, height, pages, address;
@@ -36,11 +39,12 @@ typedef struct
   uint8_t port_buffer[2];
 } ssd1306_t;
 
+// Protótipos das funções
+
 void ssd1306_init(ssd1306_t *ssd, uint8_t width, uint8_t height, bool external_vcc, uint8_t address, i2c_inst_t *i2c);
 void ssd1306_config(ssd1306_t *ssd);
 void ssd1306_command(ssd1306_t *ssd, uint8_t command);
 void ssd1306_send_data(ssd1306_t *ssd);
-
 void ssd1306_pixel(ssd1306_t *ssd, uint8_t x, uint8_t y, bool value);
 void ssd1306_fill(ssd1306_t *ssd, bool value);
 void ssd1306_rect(ssd1306_t *ssd, uint8_t top, uint8_t left, uint8_t width, uint8_t height, bool value, bool fill);

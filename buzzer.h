@@ -18,7 +18,7 @@ void init_buzzer()
     pwm_set_gpio_level(BUZZER, 0); // desliga pwm
 }
 
-// Ativando o Buzzer
+// Ativa o Buzzer em uma frequência e duração determinada
 void beepBuzzer(uint frequency, uint duration)
 {
     pwm_set_gpio_level(BUZZER, frequency);

@@ -3,7 +3,6 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "./convert_to_leds.h"
-#include "delay.h"
 
 // Biblioteca gerada pelo arquivo .pio durante compilação.
 #include "ws2818b.pio.h"
@@ -124,7 +123,7 @@ void matrizToLeds(int draw[5][5], int color[3])
   }
 }
 
-// Converte
+// Converte a matriz de pixels para a matriz de LEDs
 void convertMatrizToLed(int pixelDraw[5][5], int pixelRGB[5][5][3])
 {
   for (int i = 0; i < 5; i++)
