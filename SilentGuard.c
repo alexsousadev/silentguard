@@ -28,6 +28,9 @@ const uint8_t LEDS[] = {12, 13};
 #define SENSITIVITY 0.00631 // VRMS/Pa (GY-MAX4466)
 #define GAIN 20
 
+// Limiar configurável para som alto (em dB)
+#define valorDecibeis 70.0 // Defina um valor apropriado para o limiar de som alto
+
 // Flags e tempos de aviso
 int flag_barulho = 0;
 int flag_aviso_maximo = 0;
@@ -176,9 +179,9 @@ float read_mic()
   for (uint i = 0; i < SAMPLES; ++i)
   {
     avg += (uint)adc_buffer[i];
-    avg /= SAMPLES; // NOTE: Divisão dentro do loop, revisar lógica se necessário
-    return avg;     // NOTE: Retorno prematuro, apenas primeira amostra influencia a média
   }
+  avg /= SAMPLES; // Divisão APÓS somar todas as amostras
+  return avg;
 }
 
 //==============================================================================
@@ -245,6 +248,7 @@ void defineAction(float avg_digital_dB)
   int nivel = treatmentNivelOfSound(avg_digital_dB);
 
   defineFlagSound(avg_digital_dB);
+  warningSound(nivel); // Chama warningSound uma vez baseado no nível
 
   if (flag_aviso_maximo >= 2)
   {
@@ -271,21 +275,13 @@ void defineAction(float avg_digital_dB)
   if (flag_aviso_maximo == 3)
   {
     loop_aviso();
-    flag_aviso_maximo = 0; // Reset avisos após alarme final
+    flag_aviso_maximo = 0; // Reseta flag após loop de aviso máximo
   }
 
-  switch (nivel)
+  // Incrementa flag_aviso_maximo APÓS o warningSound e baseado no nivel
+  if (nivel == 2 || nivel == 3)
   {
-  case 1:
-    warningSound(nivel);
-    break;
-  case 2:
-    warningSound(nivel);
-  case 3:
-    warningSound(nivel);
-    break;
-  default:
-    break;
+    flag_aviso_maximo++;
   }
 }
 
@@ -302,17 +298,13 @@ void warningSound(int nivelSound)
     emojiFeliz();
     defineDrawInDisplayOfSound(nivelSound);
     break;
-  case 2: // Som médio: Emoji triste, incrementa aviso
+  case 2: // Som médio: Emoji triste, incrementa aviso (incremento movido para defineAction)
     emojiTriste();
     defineDrawInDisplayOfSound(nivelSound);
-    flag_barulho = 0;
-    flag_aviso_maximo++;
     break;
-  case 3: // Som alto: Emoji triste, incrementa aviso
+  case 3: // Som alto: Emoji triste, incrementa aviso (incremento movido para defineAction)
     emojiTriste();
     defineDrawInDisplayOfSound(nivelSound);
-    flag_barulho = 0;
-    flag_aviso_maximo++;
     break;
   default:
     break;
@@ -347,9 +339,6 @@ int main()
   init_adc();
   init_all_gpios();
   dma_config();
-  buttons_init();
-  set_interrupts();
-  void read_button();
 
   while (true)
   {
@@ -358,7 +347,7 @@ int main()
 
     float vrms = calculate_rms(adc_buffer, SAMPLES);
     float db_value = adc_to_db(vrms);
-
     defineAction(db_value); // Ações baseadas no nível de dB
+    sleep_ms(100);
   }
 }
