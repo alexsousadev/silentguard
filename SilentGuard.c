@@ -28,9 +28,6 @@ const uint8_t LEDS[] = {12, 13};
 #define SENSITIVITY 0.00631 // VRMS/Pa (GY-MAX4466)
 #define GAIN 20
 
-// Limiar configurável para som alto (em dB)
-#define valorDecibeis 70.0 // Defina um valor apropriado para o limiar de som alto
-
 // Flags e tempos de aviso
 int flag_barulho = 0;
 int flag_aviso_maximo = 0;
@@ -42,6 +39,8 @@ float smoothing_factor = 2;
 int min_flag_threshold = 1;
 int max_flag_threshold = 10;
 uint64_t last_warning_time = 0;
+uint64_t last_increment_time = 0;              // Tempo do último incremento de aviso
+const uint64_t INCREMENT_COOLDOWN_US = 500000; // Cooldown de 0.5 segundos para incremento
 
 // Buffer para amostras do ADC
 uint16_t adc_buffer[SAMPLES];
@@ -248,12 +247,14 @@ void defineAction(float avg_digital_dB)
   int nivel = treatmentNivelOfSound(avg_digital_dB);
 
   defineFlagSound(avg_digital_dB);
-  warningSound(nivel); // Chama warningSound uma vez baseado no nível
 
-  if (flag_aviso_maximo >= 2)
+  if (flag_aviso_maximo == 2)
   {
-    gpio_put(LEDS[1], 1); // Vermelho: Alerta máximo
     gpio_put(LEDS[0], 0);
+    gpio_put(LEDS[1], 1);
+    beepBuzzer(2000, 250);
+    gpio_put(LEDS[1], 0);
+    beepBuzzer(2000, 250);
   }
   else if (flag_barulho == 1 && flag_aviso_maximo < 2)
   {
@@ -266,22 +267,25 @@ void defineAction(float avg_digital_dB)
     gpio_put(LEDS[1], 0);
   }
 
-  if (flag_aviso_maximo == 2)
-  {
-    beepBuzzer(2000, 250);
-    sleep_ms(2000);
-  }
-
   if (flag_aviso_maximo == 3)
   {
     loop_aviso();
-    flag_aviso_maximo = 0; // Reseta flag após loop de aviso máximo
+    flag_aviso_maximo = 0;
   }
 
-  // Incrementa flag_aviso_maximo APÓS o warningSound e baseado no nivel
-  if (nivel == 2 || nivel == 3)
+  switch (nivel)
   {
-    flag_aviso_maximo++;
+  case 1:
+    warningSound(nivel);
+    break;
+  case 2:
+    warningSound(nivel);
+    break;
+  case 3:
+    warningSound(nivel);
+    break;
+  default:
+    break;
   }
 }
 
@@ -292,17 +296,25 @@ void defineAction(float avg_digital_dB)
 // Ações de aviso (display e som) por nível de som
 void warningSound(int nivelSound)
 {
+  uint64_t current_time = time_us_64();
+  if (nivelSound >= 2 && (current_time - last_increment_time >= INCREMENT_COOLDOWN_US))
+  {
+    flag_aviso_maximo++;
+    last_increment_time = current_time; // Atualiza o tempo do último incremento
+  }
+
   switch (nivelSound)
   {
   case 1: // Som baixo: Emoji feliz
     emojiFeliz();
     defineDrawInDisplayOfSound(nivelSound);
     break;
-  case 2: // Som médio: Emoji triste, incrementa aviso (incremento movido para defineAction)
+  case 2: // Som médio: Emoji triste, incrementa aviso
     emojiTriste();
     defineDrawInDisplayOfSound(nivelSound);
+
     break;
-  case 3: // Som alto: Emoji triste, incrementa aviso (incremento movido para defineAction)
+  case 3: // Som alto: Emoji triste, incrementa aviso
     emojiTriste();
     defineDrawInDisplayOfSound(nivelSound);
     break;
@@ -339,6 +351,7 @@ int main()
   init_adc();
   init_all_gpios();
   dma_config();
+  initialize_all();
 
   while (true)
   {
@@ -348,6 +361,7 @@ int main()
     float vrms = calculate_rms(adc_buffer, SAMPLES);
     float db_value = adc_to_db(vrms);
     defineAction(db_value); // Ações baseadas no nível de dB
+    printf("AVISO: %d\n", flag_aviso_maximo);
     sleep_ms(100);
   }
 }
