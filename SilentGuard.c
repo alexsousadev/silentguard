@@ -25,7 +25,7 @@ const uint8_t LEDS[] = {12, 13};
 #define ADC_MAX 4095
 #define VREF 3.3
 #define OFFSET 2048
-#define SENSITIVITY 0.00631 // VRMS/Pa (GY-MAX4466)
+#define SENSITIVITY 0.00631 // VRMS/Pa do microfone
 #define GAIN 20
 
 // Flags e tempos de aviso
@@ -106,12 +106,11 @@ void init_adc()
   adc_select_input(MIC_CHANNEL);
 
   adc_fifo_setup(
-      true,  // FIFO enable
-      true,  // DMA request enable
-      1,     // FIFO level for IRQ
-      false, // No FIFO overflow discard
-      false  // 16-bit format
-  );
+      true,
+      true,
+      1,
+      false,
+      false);
 }
 
 // Inicializa LEDs indicadores
@@ -129,9 +128,9 @@ void init_leds()
 void init_all_gpios()
 {
   init_leds();
-  init_matriz_leds(); // Display de matriz (externo)
-  init_display();     // Display geral (externo)
-  init_buzzer();      // Buzzer (externo)
+  init_matriz_leds(); // Display de matriz
+  init_display();     // Display geral
+  init_buzzer();      // Buzzer
 }
 
 // Configura DMA para transferência ADC
@@ -179,7 +178,7 @@ float read_mic()
   {
     avg += (uint)adc_buffer[i];
   }
-  avg /= SAMPLES; // Divisão APÓS somar todas as amostras
+  avg /= SAMPLES;
   return avg;
 }
 
@@ -361,7 +360,6 @@ int main()
     float vrms = calculate_rms(adc_buffer, SAMPLES);
     float db_value = adc_to_db(vrms);
     defineAction(db_value); // Ações baseadas no nível de dB
-    printf("AVISO: %d\n", flag_aviso_maximo);
     sleep_ms(100);
   }
 }

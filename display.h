@@ -33,7 +33,7 @@
 int buttons[2] = {BUTTON_A, BUTTON_B}; // Pinos dos botões
 int valorDecibeis = 60;                // Limite de dB configurável (padrão)
 
-ssd1306_t ssd;           // Driver do display OLED
+ssd1306_t ssd;           // Objeto do display
 bool menuActive = false; // Flag de menu ativo/inativo
 
 // Exemplos de ruídos por nível (para display)
@@ -115,7 +115,7 @@ void drawSoundMessage(const char *sound)
     strncpy(temp, sound, sizeof(temp) - 1);
     temp[sizeof(temp) - 1] = '\0';
 
-    char *palavras[3]; // Max 3 palavras por linha
+    char *palavras[3]; // Max. 3 palavras por linha
     int count = 0;
 
     char *token = strtok(temp, " ");
