@@ -2,9 +2,11 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware/dma.h"
-#include "neopixel.h"
-#include "buzzer.h"
-#include "display.h"
+#include "matriz_leds/matriz_leds.h"
+#include "buzzer/buzzer.h"
+#include "display/display.h"
+#include "joystick/joystick.h"
+#include "interruptions/interruptions.h"
 #include <math.h>
 
 //==============================================================================
@@ -131,7 +133,14 @@ void init_all_gpios()
   init_matriz_leds(); // Display de matriz
   init_display();     // Display geral
   init_buzzer();      // Buzzer
+  buttons_init();     // Botões
+  init_joystick();    // Joystick
 }
+
+// // Inicialização das Interrupções
+// void init_all_interrupts()
+// {
+// }
 
 // Configura DMA para transferência ADC
 void dma_config()
@@ -251,9 +260,9 @@ void defineAction(float avg_digital_dB)
   {
     gpio_put(LEDS[0], 0);
     gpio_put(LEDS[1], 1);
-    beepBuzzer(2000, 250);
-    gpio_put(LEDS[1], 0);
-    beepBuzzer(2000, 250);
+    // beepBuzzer(2000, 250);
+    // gpio_put(LEDS[1], 0);
+    // beepBuzzer(2000, 250);
   }
   else if (flag_barulho == 1 && flag_aviso_maximo < 2)
   {
@@ -349,8 +358,10 @@ int main()
   stdio_init_all();
   init_adc();
   init_all_gpios();
+  init_interruptions();
+  // set_interrupts();
+  // init_all_interrupts();
   dma_config();
-  initialize_all();
 
   while (true)
   {

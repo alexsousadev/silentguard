@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "hardware/pio.h"
-#include "hardware/clocks.h"
+#include "matriz_leds.h"
 #include "./convert_to_leds.h"
 
 // Biblioteca gerada pelo arquivo .pio durante compilação.

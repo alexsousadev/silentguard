@@ -1,7 +1,6 @@
-#include <stdio.h>
 #include "pico/stdlib.h"
 #include "display/ssd1306.h"
-#include <stdlib.h>
+#include "display.h"
 #include <string.h>
 
 //==============================================================================
@@ -13,10 +12,6 @@
 #define I2C_SDA 14
 #define I2C_SCL 15
 #define I2C_LINK 0x3C // Endereço do display
-
-// Pinos dos botões A e B
-#define BUTTON_A 5
-#define BUTTON_B 6
 
 // Ajuste de volume e valor padrão de dB
 #define VALUE_INCREMENT_VOLUME 5
@@ -30,13 +25,13 @@
 //                       VARIÁVEIS GLOBAIS
 //==============================================================================
 
-int buttons[2] = {BUTTON_A, BUTTON_B}; // Pinos dos botões
-int valorDecibeis = 60;                // Limite de dB configurável (padrão)
+// int buttons[2] = {BUTTON_A, BUTTON_B}; // Pinos dos botões
+int valorDecibeis = 60; // Limite de dB configurável (padrão)
 
 ssd1306_t ssd;           // Objeto do display
 bool menuActive = false; // Flag de menu ativo/inativo
 
-// Exemplos de ruídos por nível (para display)
+// Exemplos de ruídos por nível(para display)
 const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS + 1] = {
     {"nível 1", "Conversa normal", "Ar- condicionado", "Chuva leve"},
     {"nível 2", "Batedeira", "Secador de cabelo", "Trem"},
@@ -49,8 +44,6 @@ const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS + 1] = {
 
 void init_display();
 void buttons_init();
-void set_interrupts();
-void initialize_all();
 
 void drawSoundMessage(const char *sound);
 void defineDraw(int nivelSound);
@@ -72,30 +65,21 @@ void init_display()
     ssd1306_init_config_clean(&ssd, I2C_SCL, I2C_SDA, I2C_PORT, I2C_LINK);
 }
 
-void buttons_init()
-{
-    for (int i = 0; i < 2; i++)
-    {
-        gpio_init(buttons[i]);
-        gpio_set_dir(buttons[i], GPIO_IN);
-        gpio_pull_up(buttons[i]);
-    }
-}
-
 // Configura interrupção para botão A (menu)
-void set_interrupts()
-{
-    gpio_set_function(BUTTON_A, GPIO_FUNC_SIO);
-    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
-}
+//! IMPORTANTE PRA CARALHOOOO
+// void set_interrupts()
+// {
+//     gpio_set_function(BUTTON_A, GPIO_FUNC_SIO);
+//     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
+// }
 
 // Inicializa display, botões e interrupções
-void initialize_all()
-{
-    init_display();
-    buttons_init();
-    set_interrupts();
-}
+// void initialize_all()
+// {
+//     init_display();
+//     buttons_init();
+//     set_interrupts();
+// }
 
 //==============================================================================
 //                       FUNÇÕES RELACIONADAS AO DISPLAY
@@ -157,6 +141,21 @@ void defineDrawInDisplayOfSound(int nivelSound)
 
     ssd1306_send_data(&ssd);
     sleep_ms(5000); // Mensagem visível por 5 segundos
+}
+
+//==============================================================================
+//                       CONFIGURAÇÕES DO MENU
+//==============================================================================
+
+void menu_config()
+{
+    ssd1306_clear_screen(&ssd);
+    ssd1306_draw_string(&ssd, "Config", 36, 10);
+    ssd1306_draw_string(&ssd, "--------", 30, 20);
+    ssd1306_draw_string(&ssd, "-", 15, 30);
+    ssd1306_draw_string(&ssd, "Settings", 30, 30);
+    ssd1306_draw_string(&ssd, "Options", 30, 40);
+    ssd1306_send_data(&ssd);
 }
 
 // Desenha a tela de configuração do menu

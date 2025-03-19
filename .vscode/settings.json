@@ -37,6 +37,11 @@
     "raspberry-pi-pico.cmakePath": "${HOME}/.pico-sdk/cmake/v3.29.9/bin/cmake",
     "raspberry-pi-pico.ninjaPath": "${HOME}/.pico-sdk/ninja/v1.12.1/ninja",
     "files.associations": {
-        "buzzer.h": "c"
+        "buzzer.h": "c",
+        "convert_to_leds.h": "c",
+        "joystick.h": "c",
+        "interruptions.h": "c",
+        "matriz_leds.h": "c",
+        "display.h": "c"
     }
 }

@@ -49,7 +49,17 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(SilentGuard SilentGuard.c display/ssd1306.c)
+add_executable(SilentGuard 
+    SilentGuard.c 
+    display/ssd1306.c 
+    display/display.c
+    joystick/joystick.c
+    buzzer/buzzer.c
+    interruptions/interruptions.c
+    matriz_leds/matriz_leds.c
+    buttons/buttons.c
+)
+
 
 pico_set_program_name(SilentGuard "SilentGuard")
 pico_set_program_version(SilentGuard "0.1")
