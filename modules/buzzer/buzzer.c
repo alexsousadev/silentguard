@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "hardware/clocks.h"
-#include "hardware/gpio.h"
-#include "hardware/pwm.h"
+
+#include "buzzer.h"
 
 #define BUZZER 21
 #define LOOP_BEEP 3

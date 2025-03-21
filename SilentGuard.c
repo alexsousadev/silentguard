@@ -2,31 +2,20 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware/dma.h"
-#include "neopixel.h"
-#include "buzzer.h"
-#include "display.h"
-#include <math.h>
+#include "modules/matriz_leds/matriz_leds.h"
+#include "modules/buzzer/buzzer.h"
+#include "modules/display/display.h"
+#include "modules/joystick/joystick.h"
+#include "modules/interruptions/interruptions.h"
+#include "modules/core/dma.h"
+#include "modules/mic/mic.h"
 
 //==============================================================================
 //                       DEFINIÇÕES E INCLUSÕES
 //==============================================================================
 
-// Pino e canal do microfone
-#define MIC_CHANNEL 2
-#define MIC_PIN (26 + MIC_CHANNEL)
-
-// Amostras para cálculo do nível de ruído
-#define SAMPLES 100
-
 // LEDs indicadores: Azul e vermelho
 const uint8_t LEDS[] = {12, 13};
-
-// Constantes para conversão para dB
-#define ADC_MAX 4095
-#define VREF 3.3
-#define OFFSET 2048
-#define SENSITIVITY 0.00631 // VRMS/Pa do microfone
-#define GAIN 20
 
 // Flags e tempos de aviso
 int flag_barulho = 0;
@@ -42,76 +31,21 @@ uint64_t last_warning_time = 0;
 uint64_t last_increment_time = 0;              // Tempo do último incremento de aviso
 const uint64_t INCREMENT_COOLDOWN_US = 500000; // Cooldown de 0.5 segundos para incremento
 
-// Buffer para amostras do ADC
-uint16_t adc_buffer[SAMPLES];
-
-// DMA configuration
-uint dma_channel;
-dma_channel_config dma_cfg;
-
 //==============================================================================
 //                       PROTÓTIPOS DE FUNÇÕES
 //==============================================================================
 
 void init_all_gpios();
-void init_adc();
+
 void init_leds();
-void dma_config();
 
-float calculate_rms(uint16_t *samples, int num_samples);
-float adc_to_db(float vrms);
-void sample_mic();
-float read_mic();
-
-int treatmentNivelOfSound(float avgDigital);
-void defineFlagSound(float avgDigital);
-void defineAction(float avg_digital_dB);
+void defineAction(float db_value);
 void warningSound(int nivelSound);
 void loop_aviso();
 
 //==============================================================================
-//                       FUNÇÕES DE CONVERSÃO EM dB
-//==============================================================================
-
-// Calcula RMS de um buffer de amostras ADC
-float calculate_rms(uint16_t *samples, int num_samples)
-{
-  float sum = 0.0;
-  for (int i = 0; i < num_samples; i++)
-  {
-    float voltage = (samples[i] - OFFSET) * (VREF / ADC_MAX);
-    sum += voltage * voltage;
-  }
-  return sqrt(sum / num_samples);
-}
-
-// Converte tensão RMS para Decibéis (dB)
-float adc_to_db(float vrms)
-{
-  float vrms_with_gain = vrms * GAIN;
-  float adjusted_sensitivity = SENSITIVITY * 0.5; // Ajuste fino da sensibilidade
-
-  return 20 * log10(vrms_with_gain / adjusted_sensitivity);
-}
-
-//==============================================================================
 //                       FUNÇÕES DE INICIALIZAÇÃO
 //==============================================================================
-
-// Configura e Inicializa o ADC para microfone
-void init_adc()
-{
-  adc_gpio_init(MIC_PIN);
-  adc_init();
-  adc_select_input(MIC_CHANNEL);
-
-  adc_fifo_setup(
-      true,
-      true,
-      1,
-      false,
-      false);
-}
 
 // Inicializa LEDs indicadores
 void init_leds()
@@ -131,55 +65,9 @@ void init_all_gpios()
   init_matriz_leds(); // Display de matriz
   init_display();     // Display geral
   init_buzzer();      // Buzzer
-}
-
-// Configura DMA para transferência ADC
-void dma_config()
-{
-  dma_channel = dma_claim_unused_channel(true);
-  dma_cfg = dma_channel_get_default_config(dma_channel);
-
-  channel_config_set_transfer_data_size(&dma_cfg, DMA_SIZE_16);
-  channel_config_set_read_increment(&dma_cfg, false);
-  channel_config_set_write_increment(&dma_cfg, true);
-  channel_config_set_dreq(&dma_cfg, DREQ_ADC);
-
-  channel_config_set_ring(&dma_cfg, false, 0); // Sem "wrap"
-}
-
-//==============================================================================
-//                       LEITURA DO MICROFONE
-//==============================================================================
-
-// Captura bloco de amostras do microfone via DMA
-void sample_mic()
-{
-  adc_fifo_drain();
-  adc_run(false);
-
-  dma_channel_configure(
-      dma_channel,
-      &dma_cfg,
-      adc_buffer,
-      &adc_hw->fifo,
-      SAMPLES,
-      true);
-
-  adc_run(true);
-  dma_channel_wait_for_finish_blocking(dma_channel);
-  adc_run(false);
-}
-
-// Calcula média das leituras do microfone (no buffer)
-float read_mic()
-{
-  float avg = 0.f;
-  for (uint i = 0; i < SAMPLES; ++i)
-  {
-    avg += (uint)adc_buffer[i];
-  }
-  avg /= SAMPLES;
-  return avg;
+  buttons_init();     // Botões
+  init_joystick();    // Joystick
+  mic_init();
 }
 
 //==============================================================================
@@ -241,19 +129,15 @@ void defineFlagSound(float avgDigital)
 }
 
 // Define ações baseadas no nível de som (dB)
-void defineAction(float avg_digital_dB)
+void defineAction(float db_value)
 {
-  int nivel = treatmentNivelOfSound(avg_digital_dB);
-
-  defineFlagSound(avg_digital_dB);
+  int nivel = treatmentNivelOfSound(db_value);
+  defineFlagSound(db_value);
 
   if (flag_aviso_maximo == 2)
   {
     gpio_put(LEDS[0], 0);
     gpio_put(LEDS[1], 1);
-    beepBuzzer(2000, 250);
-    gpio_put(LEDS[1], 0);
-    beepBuzzer(2000, 250);
   }
   else if (flag_barulho == 1 && flag_aviso_maximo < 2)
   {
@@ -347,18 +231,13 @@ void loop_aviso()
 int main()
 {
   stdio_init_all();
-  init_adc();
   init_all_gpios();
-  dma_config();
-  initialize_all();
+  init_interruptions();
 
   while (true)
   {
-    sample_mic();
-    float avg = read_mic(); // Média das amostras (para debug, valor dB é usado)
-
-    float vrms = calculate_rms(adc_buffer, SAMPLES);
-    float db_value = adc_to_db(vrms);
+    float db_value = mic_get_db();
+    printf("Valor dB: %f\n", db_value);
     defineAction(db_value); // Ações baseadas no nível de dB
     sleep_ms(100);
   }

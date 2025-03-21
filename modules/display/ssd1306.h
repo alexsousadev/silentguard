@@ -1,3 +1,6 @@
+#ifndef SSD1306_H
+#define SSD1306_H
+
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
@@ -40,7 +43,6 @@ typedef struct
 } ssd1306_t;
 
 // Protótipos das funções
-
 void ssd1306_init(ssd1306_t *ssd, uint8_t width, uint8_t height, bool external_vcc, uint8_t address, i2c_inst_t *i2c);
 void ssd1306_config(ssd1306_t *ssd);
 void ssd1306_command(ssd1306_t *ssd, uint8_t command);
@@ -56,3 +58,5 @@ void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y);
 void ssd1306_init_config_clean(ssd1306_t *ssd, uint SCL, uint SDA, i2c_inst_t *PORT, uint8_t address);
 void ssd1306_draw_bitmap(ssd1306_t *ssd, const uint8_t *bitmap);
 void ssd1306_clear_screen(ssd1306_t *ssd);
+
+#endif // SSD1306_H
