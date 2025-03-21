@@ -51,21 +51,23 @@ pico_sdk_init()
 
 add_executable(SilentGuard 
     SilentGuard.c 
-    display/ssd1306.c 
-    display/display.c
-    joystick/joystick.c
-    buzzer/buzzer.c
-    interruptions/interruptions.c
-    matriz_leds/matriz_leds.c
-    buttons/buttons.c
+    modules/display/ssd1306.c 
+    modules/display/display.c
+    modules/joystick/joystick.c
+    modules/buzzer/buzzer.c
+    modules/interruptions/interruptions.c
+    modules/matriz_leds/matriz_leds.c
+    modules/buttons/buttons.c
+    modules/core/dma.c
+    modules/mic/mic.c
+    modules/display/menu/menu.c
 )
-
 
 pico_set_program_name(SilentGuard "SilentGuard")
 pico_set_program_version(SilentGuard "0.1")
 
 # Generate PIO header
-pico_generate_pio_header(SilentGuard ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
+pico_generate_pio_header(SilentGuard ${CMAKE_CURRENT_LIST_DIR}/modules/ws2818b.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(SilentGuard 0)

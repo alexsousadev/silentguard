@@ -2,10 +2,12 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware/dma.h"
-#include "matriz_leds/matriz_leds.h"
-#include "buzzer/buzzer.h";
-#include "display/display.h";
-#include "joystick/joystick.h";
+#include "modules/matriz_leds/matriz_leds.h"
+#include "modules/buzzer/buzzer.h"
+#include "modules/display/display.h"
+#include "modules/joystick/joystick.h"
+
+extern volatile bool menu_requested;
 
 // Prototipos das funções
 void init_interruptions(void);

@@ -2,6 +2,7 @@
 
 int buttons[2] = {BUTTON_A, BUTTON_B};
 
+// Inicializa botões
 void buttons_init()
 {
     for (int i = 0; i < 2; i++)

@@ -1,32 +1,16 @@
-#include "pico/stdlib.h"
-#include "display/ssd1306.h"
-#include "display.h"
+#include <stdio.h>
 #include <string.h>
-
-//==============================================================================
-//                       DEFINIÇÕES E INCLUSÕES
-//==============================================================================
-
-// Definições I2C para display OLED
-#define I2C_PORT i2c1
-#define I2C_SDA 14
-#define I2C_SCL 15
-#define I2C_LINK 0x3C // Endereço do display
-
-// Ajuste de volume e valor padrão de dB
-#define VALUE_INCREMENT_VOLUME 5
-#define DEFAULT_VALUE_DB 60
-
-// Níveis de ruído de exemplo (para display)
-#define NUM_FAIXAS 4
-#define NUM_EXEMPLOS 3
+#include "pico/stdlib.h"
+#include "modules/display/ssd1306.h"
+#include "modules/display/display.h"
+#include "modules/display/menu/menu.h"
+#include "modules/joystick/joystick.h"
 
 //==============================================================================
 //                       VARIÁVEIS GLOBAIS
 //==============================================================================
 
-// int buttons[2] = {BUTTON_A, BUTTON_B}; // Pinos dos botões
-int valorDecibeis = 60; // Limite de dB configurável (padrão)
+int valorDecibeis = 60; // Limite de dB configuráve
 
 ssd1306_t ssd;           // Objeto do display
 bool menuActive = false; // Flag de menu ativo/inativo
@@ -39,24 +23,6 @@ const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS + 1] = {
     {"Silencio"}};
 
 //==============================================================================
-//                       PROTÓTIPOS DE FUNÇÕES
-//==============================================================================
-
-void init_display();
-void buttons_init();
-
-void drawSoundMessage(const char *sound);
-void defineDraw(int nivelSound);
-void defineDrawInDisplayOfSound(int nivelSound);
-void drawMenuScreen();
-
-void configDisplayConfig();
-void button_a_callback(uint gpio, uint32_t events);
-
-bool debounce(uint gpio);
-char *intToString(int num);
-
-//==============================================================================
 //                       FUNÇÕES DE INICIALIZAÇÃO
 //==============================================================================
 
@@ -64,22 +30,6 @@ void init_display()
 {
     ssd1306_init_config_clean(&ssd, I2C_SCL, I2C_SDA, I2C_PORT, I2C_LINK);
 }
-
-// Configura interrupção para botão A (menu)
-//! IMPORTANTE PRA CARALHOOOO
-// void set_interrupts()
-// {
-//     gpio_set_function(BUTTON_A, GPIO_FUNC_SIO);
-//     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
-// }
-
-// Inicializa display, botões e interrupções
-// void initialize_all()
-// {
-//     init_display();
-//     buttons_init();
-//     set_interrupts();
-// }
 
 //==============================================================================
 //                       FUNÇÕES RELACIONADAS AO DISPLAY
@@ -127,7 +77,7 @@ void defineDraw(int nivelSound)
     else
     {
         const char *sound = randomSound(nivelSound);
-        drawSoundMessage(sound); // Exibe exemplo de som aleatório para o nível
+        drawSoundMessage(sound);
     }
 }
 
@@ -140,21 +90,72 @@ void defineDrawInDisplayOfSound(int nivelSound)
     defineDraw(nivelSound);
 
     ssd1306_send_data(&ssd);
-    sleep_ms(5000); // Mensagem visível por 5 segundos
+    sleep_ms(5000);
 }
 
 //==============================================================================
 //                       CONFIGURAÇÕES DO MENU
 //==============================================================================
 
+// Controle das configurações do menu
+void all_options_config()
+{
+    int num = 0;
+    menuActive = true;
+    ssd1306_clear_screen(&ssd);
+    menu_config();
+    int options[2] = {0, 1};
+    bool option = 0;
+
+    while (menuActive)
+    {
+        if (debounce(BUTTON_B)) // Botão B: Seleciona uma opção
+        {
+            select_option_config(option);
+        }
+        else if (debounce(BUTTON_A)) // Botão A: Escolhe opção
+        {
+            option = !option;
+
+            if (options[option] == 0)
+            {
+                menu_config();
+            }
+            else
+            {
+                menu_config2();
+            }
+        }
+
+        else if (debounce(BUTTON_JOYSTICK)) // Botão Joystick: Sai do menu
+        {
+            menuActive = false;
+            return;
+        }
+    }
+    ssd1306_clear_screen(&ssd); // Limpa tela ao sair do menu
+}
+
+// Opções do menu de configuração
 void menu_config()
 {
     ssd1306_clear_screen(&ssd);
     ssd1306_draw_string(&ssd, "Config", 36, 10);
     ssd1306_draw_string(&ssd, "--------", 30, 20);
-    ssd1306_draw_string(&ssd, "-", 15, 30);
-    ssd1306_draw_string(&ssd, "Settings", 30, 30);
-    ssd1306_draw_string(&ssd, "Options", 30, 40);
+    ssd1306_draw_string(&ssd, "-", 10, 30);
+    ssd1306_draw_string(&ssd, "Manual", 30, 30);
+    ssd1306_draw_string(&ssd, "Auto", 30, 40);
+    ssd1306_send_data(&ssd);
+}
+
+void menu_config2()
+{
+    ssd1306_clear_screen(&ssd);
+    ssd1306_draw_string(&ssd, "Config", 36, 10);
+    ssd1306_draw_string(&ssd, "--------", 30, 20);
+    ssd1306_draw_string(&ssd, "-", 10, 40);
+    ssd1306_draw_string(&ssd, "Manual", 30, 30);
+    ssd1306_draw_string(&ssd, "Auto", 30, 40);
     ssd1306_send_data(&ssd);
 }
 
@@ -172,69 +173,17 @@ void drawMenuScreen()
     ssd1306_send_data(&ssd);
 }
 
-//==============================================================================
-//                       MENU DE CONFIGURAÇÃO
-//==============================================================================
-
-// Callback do botão A: ativa/desativa menu de config
-void button_a_callback(uint gpio, uint32_t events)
-{
-    if (!menuActive)
-    {
-        configDisplayConfig(); // Inicia menu se não ativo
-    }
-    else
-    {
-        menuActive = false; // Sai do menu se já ativo
-    }
-}
-
-// Tela de configuração do display (volume em dB)
-void configDisplayConfig()
-{
-    menuActive = true;
-    ssd1306_clear_screen(&ssd);
-    drawMenuScreen();
-
-    while (menuActive)
-    {
-        if (debounce(BUTTON_B)) // Botão B: aumenta dB
-        {
-            valorDecibeis += VALUE_INCREMENT_VOLUME;
-            if (valorDecibeis >= 105)
-            {
-                valorDecibeis = DEFAULT_VALUE_DB; // Reseta se passar de 105dB
-            }
-            drawMenuScreen();
-        }
-
-        if (debounce(BUTTON_A)) // Botão A: sai do menu
-        {
-            menuActive = false;
-        }
-    }
-    ssd1306_clear_screen(&ssd); // Limpa tela ao sair do menu
-    ssd1306_send_data(&ssd);
-}
-
-//==============================================================================
-//                        TRATAMENTO DE BOTÕES
-//==============================================================================
-
-// Debounce para botões (evita múltiplos cliques)
+// Tratar debounce de um botão
 bool debounce(uint gpio)
 {
-    static uint32_t last_press_time[2] = {0};
-    int buttonIndex = (gpio == BUTTON_A) ? 0 : ((gpio == BUTTON_B) ? 1 : -1);
-    if (buttonIndex == -1)
-        return false;
+    static uint64_t last_press_time = 0;  // último clique
+    uint64_t current_time = time_us_64(); // tempo atual
 
-    uint32_t current_time = get_absolute_time();
     if (gpio_get(gpio) == 0)
     {
-        if (absolute_time_diff_us(last_press_time[buttonIndex], current_time) > 200000) // 200ms debounce
+        if ((current_time - last_press_time) > 200000) // Espera 200ms
         {
-            last_press_time[buttonIndex] = current_time;
+            last_press_time = current_time;
             return true;
         }
     }
