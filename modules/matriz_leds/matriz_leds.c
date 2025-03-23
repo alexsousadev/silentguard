@@ -1,30 +1,30 @@
 #include "matriz_leds.h"
 #include "./convert_to_leds.h"
 #include "ws2818b.pio.h"
+#include "modules/core/pwm.h"
 
 // Declaração das matrizes de pixels
-int pixelDraw[5][5];
-int pixelRGB[5][5][3];
+int pixel_draw[5][5];
+int pixel_rgb[5][5][3];
 
 // Definição de pixel RGB
 struct pixel_t
 {
-  uint8_t G, R, B;
+  uint8_t g, r, b;
 };
 typedef struct pixel_t pixel_t;
-typedef pixel_t npLED_t;
+typedef pixel_t np_led_t;
 
 // Declaração do buffer de pixels que formam a matriz.
-npLED_t leds[LED_COUNT];
+np_led_t leds[LED_COUNT];
 
 // Variáveis para uso da máquina PIO.
 PIO np_pio;
 uint sm;
 
 // Inicializa a máquina PIO para controle da matriz de LEDs.
-void npInit(uint pin)
+void np_init(uint pin)
 {
-
   // Cria programa PIO.
   uint offset = pio_add_program(pio0, &ws2818b_program);
   np_pio = pio0;
@@ -43,96 +43,85 @@ void npInit(uint pin)
   // Limpa buffer de pixels.
   for (uint i = 0; i < LED_COUNT; ++i)
   {
-    leds[i].R = 0;
-    leds[i].G = 0;
-    leds[i].B = 0;
+    leds[i].r = 0;
+    leds[i].g = 0;
+    leds[i].b = 0;
   }
 }
 
 //  Atribui uma cor RGB a um LED.
-void npSetLED(const uint index, const uint8_t r, const uint8_t g, const uint8_t b)
+void np_set_led(const uint index, const uint8_t r, const uint8_t g, const uint8_t b)
 {
-  leds[index].R = r;
-  leds[index].G = g;
-  leds[index].B = b;
+  leds[index].r = r;
+  leds[index].g = g;
+  leds[index].b = b;
 }
 
 // Limpa o buffer de pixels.
-void npClear()
+void np_clear()
 {
   for (uint i = 0; i < LED_COUNT; ++i)
-    npSetLED(i, 0, 0, 0);
+    np_set_led(i, 0, 0, 0);
 }
 
 // Escreve os dados do buffer nos LEDs.
-void npWrite()
+void np_write()
 {
-  // Escreve cada dado de 8-bits dos pixels em sequência no buffer da máquina PIO.
   for (uint i = 0; i < LED_COUNT; ++i)
   {
-    pio_sm_put_blocking(np_pio, sm, leds[i].G);
-    pio_sm_put_blocking(np_pio, sm, leds[i].R);
-    pio_sm_put_blocking(np_pio, sm, leds[i].B);
+    pio_sm_put_blocking(np_pio, sm, leds[i].g);
+    pio_sm_put_blocking(np_pio, sm, leds[i].r);
+    pio_sm_put_blocking(np_pio, sm, leds[i].b);
   }
   sleep_us(100); // Espera 100us, sinal de RESET do datasheet.
 }
 
-int matrizLeds[5][5] = {
-    {24, 23, 22, 21, 20}, // 24 23 22 21 20
-    {15, 16, 17, 18, 19}, // 15 16 17 18 19
-    {14, 13, 12, 11, 10}, // 14 13 12 11 10
-    {5, 6, 7, 8, 9},      // 5 6 7 8 9
-    {4, 3, 2, 1, 0}};     // 4 3 2 1 0
+int matriz_leds[5][5] = {
+    {24, 23, 22, 21, 20},
+    {15, 16, 17, 18, 19},
+    {14, 13, 12, 11, 10},
+    {5, 6, 7, 8, 9},
+    {4, 3, 2, 1, 0}};
 
-void matrizToLeds(int draw[5][5], int color[3])
+void matriz_to_leds(int draw[5][5], int color[3])
 {
-
-  int matrizLeds[5][5] = {
-      {24, 23, 22, 21, 20}, // 24 23 22 21 20
-      {15, 16, 17, 18, 19}, // 15 16 17 18 19
-      {14, 13, 12, 11, 10}, // 14 13 12 11 10
-      {5, 6, 7, 8, 9},      // 5 6 7 8 9
-      {4, 3, 2, 1, 0}};     // 4 3 2 1 0
-
   for (int i = 0; i < 5; i++)
   {
     for (int j = 0; j < 5; j++)
     {
       if (draw[i][j] == 1)
       {
-        npSetLED(matrizLeds[i][j], color[0], color[1], color[2]);
+        np_set_led(matriz_leds[i][j], color[0], color[1], color[2]);
       }
     }
   }
 }
 
-// Converte a matriz de pixels para a matriz de LEDs
-void convertMatrizToLed(int pixelDraw[5][5], int pixelRGB[5][5][3])
+void convert_matriz_to_led(int pixel_draw[5][5], int pixel_rgb[5][5][3])
 {
   for (int i = 0; i < 5; i++)
   {
     for (int j = 0; j < 5; j++)
     {
-      if (pixelDraw[i][j] == 1) // Verifica se o LED está ligado
+      if (pixel_draw[i][j] == 1)
       {
-        // Usa o índice correto da matriz de LEDs
-        npSetLED(matrizLeds[i][j], pixelRGB[i][j][0], pixelRGB[i][j][1], pixelRGB[i][j][2]);
+        np_set_led(matriz_leds[i][j], pixel_rgb[i][j][0], pixel_rgb[i][j][1], pixel_rgb[i][j][2]);
       }
     }
   }
 }
 
-// inicialização da matriz de LEDs
+// Inicialização da matriz de LEDs
 void init_matriz_leds()
 {
-  npInit(LED_PIN);
-  npClear();
+  np_init(LED_PIN);
+  np_clear();
 }
 
-// Desenha emoji feliz na matriz de leds
-void emojiFeliz()
+// Desenha um emoji feliz na matriz de LEDs
+void happy_emoji()
 {
-  npClear();
+  np_clear();
   static uint32_t new_piskel_data[1][25] = {
       {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
        0x00000000, 0xff793600, 0x00000000, 0xff793600, 0x00000000,
@@ -140,15 +129,15 @@ void emojiFeliz()
        0xff793600, 0x00000000, 0x00000000, 0x00000000, 0xff793600,
        0x00000000, 0xff793600, 0xff793600, 0xff793600, 0x00000000}};
 
-  convertPiskelToMatriz(new_piskel_data, pixelDraw, pixelRGB);
-  convertMatrizToLed(pixelDraw, pixelRGB);
-  npWrite();
+  convert_piskel_to_matriz(new_piskel_data, pixel_draw, pixel_rgb);
+  convert_matriz_to_led(pixel_draw, pixel_rgb);
+  np_write();
 }
 
-// Desenha um emoji triste na matriz de leds
-void emojiTriste()
+// Desenha um emoji triste na matriz de LEDs
+void sad_emoji()
 {
-  npClear();
+  np_clear();
   static uint32_t new_piskel_data[1][25] = {
       {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
        0x00000000, 0xff0000ff, 0x00000000, 0xff0000ff, 0x00000000,
@@ -156,7 +145,7 @@ void emojiTriste()
        0x00000000, 0xff0000ff, 0xff0000ff, 0xff0000ff, 0x00000000,
        0xff0000ff, 0x00000000, 0x00000000, 0x00000000, 0xff0000ff}};
 
-  convertPiskelToMatriz(new_piskel_data, pixelDraw, pixelRGB);
-  convertMatrizToLed(pixelDraw, pixelRGB);
-  npWrite();
+  convert_piskel_to_matriz(new_piskel_data, pixel_draw, pixel_rgb);
+  convert_matriz_to_led(pixel_draw, pixel_rgb);
+  np_write();
 }

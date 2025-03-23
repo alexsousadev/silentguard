@@ -6,4 +6,4 @@
 
 // Protótipos de funções
 void init_buzzer(void);
-void beepBuzzer(uint frequency, uint duration);
+void beep_buzzer(uint frequency, uint duration);

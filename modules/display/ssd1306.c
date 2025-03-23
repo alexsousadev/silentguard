@@ -242,13 +242,3 @@ void ssd1306_clear_screen(ssd1306_t *ssd)
   ssd1306_fill(ssd, false); // Preenche com preto
   ssd1306_send_data(ssd);   // Atualiza display
 }
-
-// Apaga uma linha
-// void ssd1306_clear_line(ssd1306_t *ssd, uint8_t y)
-// {
-//   for (uint8_t x = 0; x < ssd->width; ++x) // Itera por todas as colunas
-//   {
-//     ssd1306_pixel(ssd, x, y, false); // Apaga o pixel na posição (x, y)
-//   }
-//   ssd1306_send_data(ssd); // Atualiza o display para refletir a mudança
-// }

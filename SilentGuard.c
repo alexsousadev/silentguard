@@ -9,65 +9,49 @@
 #include "modules/interruptions/interruptions.h"
 #include "modules/core/dma.h"
 #include "modules/mic/mic.h"
+#include "modules/leds/leds.h"
 
 //==============================================================================
 //                       DEFINIÇÕES E INCLUSÕES
 //==============================================================================
 
-// LEDs indicadores: Azul e vermelho
-const uint8_t LEDS[] = {12, 13};
-
 // Flags e tempos de aviso
-int flag_barulho = 0;
-int flag_aviso_maximo = 0;
-const uint64_t DECREMENT_DELAY_US = 20000000; // Tempo para reduzir aviso (20 segundos)
+int noise_flag = 0;
+int max_warning_flag = 0;
+const uint64_t decrement_delay_us = 20000000; // Tempo para reduzir aviso (20 segundos)
 
 // Variáveis de suavização da flag de barulho
-float flag_barulho_smoothed = 0.0;
+float noise_flag_smoothed = 0.0;
 float smoothing_factor = 2;
 int min_flag_threshold = 1;
 int max_flag_threshold = 10;
 uint64_t last_warning_time = 0;
 uint64_t last_increment_time = 0;              // Tempo do último incremento de aviso
-const uint64_t INCREMENT_COOLDOWN_US = 500000; // Cooldown de 0.5 segundos para incremento
+const uint64_t increment_cooldown_us = 500000; // Cooldown de 0.5 segundos para incremento
 
 //==============================================================================
 //                       PROTÓTIPOS DE FUNÇÕES
 //==============================================================================
 
 void init_all_gpios();
-
-void init_leds();
-
-void defineAction(float db_value);
-void warningSound(int nivelSound);
-void loop_aviso();
+void define_action(float db_value);
+void warning_sound(int sound_level);
+void warning_loop();
 
 //==============================================================================
 //                       FUNÇÕES DE INICIALIZAÇÃO
 //==============================================================================
 
-// Inicializa LEDs indicadores
-void init_leds()
-{
-  for (int i = 0; i < 2; i++)
-  {
-    gpio_init(LEDS[i]);
-    gpio_set_dir(LEDS[i], GPIO_OUT);
-    gpio_put(LEDS[i], 0);
-  }
-}
-
 // Inicializa todos os GPIOs: LEDs, display, buzzer
 void init_all_gpios()
 {
-  init_leds();
-  init_matriz_leds(); // Display de matriz
+  init_leds();        // LEDs
+  init_matriz_leds(); // Matriz de LEDs
   init_display();     // Display geral
   init_buzzer();      // Buzzer
-  buttons_init();     // Botões
+  init_buttons();     // Botões
   init_joystick();    // Joystick
-  mic_init();
+  init_mic();         // Microfone
 }
 
 //==============================================================================
@@ -75,13 +59,13 @@ void init_all_gpios()
 //==============================================================================
 
 // Classifica nível de som (1: baixo, 2: médio, 3: alto)
-int treatmentNivelOfSound(float avgDigital)
+int define_noise_level(float avg_digital)
 {
-  if (avgDigital >= 80.0) // Som muito alto
+  if (avg_digital >= 90.0) // Som muito alto
   {
     return 3;
   }
-  else if (avgDigital >= valorDecibeis) // Som alto (limiar configurável)
+  else if (avg_digital >= valor_decibeis) // Som alto (limiar configurável)
   {
     return 2;
   }
@@ -91,85 +75,74 @@ int treatmentNivelOfSound(float avgDigital)
   }
 }
 
-// Define flag de barulho com suavização
-void defineFlagSound(float avgDigital)
+// Define a flag de barulho com base no nível de som
+void define_noise_flag(float avg_digital)
 {
-  int sound_level = treatmentNivelOfSound(avgDigital);
+  int sound_level = define_noise_level(avg_digital);
+  uint64_t current_time = time_us_64();
+  float target = 0.0f;
 
-  if (sound_level == 1) // Som baixo
+  switch (sound_level)
   {
-    flag_barulho_smoothed = flag_barulho_smoothed * (1 - smoothing_factor) + 0.0 * smoothing_factor;
-    if (flag_aviso_maximo > 0)
+  case 1: // Som baixo
+    target = 0.0;
+    if (max_warning_flag > 0 && (current_time - last_warning_time >= decrement_delay_us))
     {
-      uint64_t current_time = time_us_64();
-      if (current_time - last_warning_time >= DECREMENT_DELAY_US)
-      {
-        flag_aviso_maximo--;
-        last_warning_time = current_time;
-      }
+      max_warning_flag--;
+      last_warning_time = current_time;
     }
-  }
-  else if (sound_level == 2) // Som médio
-  {
-    flag_barulho_smoothed = flag_barulho_smoothed * (1 - smoothing_factor) + 1.0 * smoothing_factor;
-    last_warning_time = time_us_64();
-  }
-  else if (sound_level == 3) // Som alto
-  {
-    flag_barulho_smoothed = flag_barulho_smoothed * (1 - smoothing_factor) + 3.0 * smoothing_factor;
-    last_warning_time = time_us_64();
+    break;
+  case 2: // Som médio
+    target = 1.0;
+    last_warning_time = current_time;
+    break;
+  case 3: // Som alto
+    target = 3.0;
+    last_warning_time = current_time;
+    break;
   }
 
-  if (flag_barulho_smoothed < min_flag_threshold)
-    flag_barulho_smoothed = min_flag_threshold;
-  if (flag_barulho_smoothed > max_flag_threshold)
-    flag_barulho_smoothed = max_flag_threshold;
+  // Atualiza com suavização exponencial (Exponential Moving Average)
+  noise_flag_smoothed = noise_flag_smoothed * (1 - smoothing_factor) + target * smoothing_factor;
 
-  flag_barulho = (int)flag_barulho_smoothed;
+  // Garante que o valor esteja dentro dos limites
+  if (noise_flag_smoothed < min_flag_threshold)
+    noise_flag_smoothed = min_flag_threshold;
+  if (noise_flag_smoothed > max_flag_threshold)
+    noise_flag_smoothed = max_flag_threshold;
+
+  noise_flag = (int)noise_flag_smoothed;
 }
 
 // Define ações baseadas no nível de som (dB)
-void defineAction(float db_value)
+void define_action(float db_value)
 {
-  int nivel = treatmentNivelOfSound(db_value);
-  defineFlagSound(db_value);
+  int level = define_noise_level(db_value); // Classifica nível de som
 
-  if (flag_aviso_maximo == 2)
+  define_noise_flag(level); // Faz o controle das flags de barulho
+
+  if (max_warning_flag == 2)
   {
-    gpio_put(LEDS[0], 0);
-    gpio_put(LEDS[1], 1);
+    gpio_put(LEDs[0], 0);
+    gpio_put(LEDs[1], 1);
   }
-  else if (flag_barulho == 1 && flag_aviso_maximo < 2)
+  else if (noise_flag == 1 && max_warning_flag < 2)
   {
-    gpio_put(LEDS[0], 1); // Azul: Aviso de barulho
-    gpio_put(LEDS[1], 0);
+    gpio_put(LEDs[0], 1); // Azul: Aviso de barulho
+    gpio_put(LEDs[1], 0);
   }
   else
   {
-    gpio_put(LEDS[0], 0);
-    gpio_put(LEDS[1], 0);
+    gpio_put(LEDs[0], 0);
+    gpio_put(LEDs[1], 0);
   }
 
-  if (flag_aviso_maximo == 3)
+  if (max_warning_flag == 3)
   {
-    loop_aviso();
-    flag_aviso_maximo = 0;
+    warning_loop();
+    max_warning_flag = 0;
   }
-
-  switch (nivel)
-  {
-  case 1:
-    warningSound(nivel);
-    break;
-  case 2:
-    warningSound(nivel);
-    break;
-  case 3:
-    warningSound(nivel);
-    break;
-  default:
-    break;
-  }
+  warning_sound(level);
 }
 
 //==============================================================================
@@ -177,51 +150,44 @@ void defineAction(float db_value)
 //==============================================================================
 
 // Ações de aviso (display e som) por nível de som
-void warningSound(int nivelSound)
+void warning_sound(int sound_level)
 {
   uint64_t current_time = time_us_64();
-  if (nivelSound >= 2 && (current_time - last_increment_time >= INCREMENT_COOLDOWN_US))
+  if (sound_level >= 2 && (current_time - last_increment_time >= increment_cooldown_us))
   {
-    flag_aviso_maximo++;
+    max_warning_flag++;
     last_increment_time = current_time; // Atualiza o tempo do último incremento
   }
 
-  switch (nivelSound)
+  // Define o desenho da matriz de leds baseado no nível de som (Emoji feliz ou triste)
+  if (sound_level < 2)
   {
-  case 1: // Som baixo: Emoji feliz
-    emojiFeliz();
-    defineDrawInDisplayOfSound(nivelSound);
-    break;
-  case 2: // Som médio: Emoji triste, incrementa aviso
-    emojiTriste();
-    defineDrawInDisplayOfSound(nivelSound);
+    happy_emoji();
+  }
+  else
+  {
+    sad_emoji();
+  }
 
-    break;
-  case 3: // Som alto: Emoji triste, incrementa aviso
-    emojiTriste();
-    defineDrawInDisplayOfSound(nivelSound);
-    break;
-  default:
-    break;
-  };
+  define_draw_in_display_of_sound(sound_level);
 }
 
 // Loop de aviso final (alarme máximo)
-void loop_aviso()
+void warning_loop()
 {
   for (int i = 0; i < 3; i++)
   {
     for (int j = 0; j < 4; j++)
     {
-      emojiTriste();
-      gpio_put(LEDS[1], 1);
-      beepBuzzer(2000, 250);
-      gpio_put(LEDS[1], 0);
-      beepBuzzer(2000, 250);
+      sad_emoji();
+      gpio_put(LEDs[1], 1);
+      beep_buzzer(2000, 250);
+      gpio_put(LEDs[1], 0);
+      beep_buzzer(2000, 250);
     }
     sleep_ms(500);
 
-    defineDrawInDisplayOfSound(4); // Nível 4: "Silencio" (alarme final)
+    define_draw_in_display_of_sound(4); // Nível 4: "Silencio" (alarme final)
   }
 }
 
@@ -237,8 +203,7 @@ int main()
   while (true)
   {
     float db_value = mic_get_db();
-    printf("Valor dB: %f\n", db_value);
-    defineAction(db_value); // Ações baseadas no nível de dB
+    define_action(db_value); // Ações baseadas no nível de dB
     sleep_ms(100);
   }
 }

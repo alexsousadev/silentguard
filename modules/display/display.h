@@ -13,24 +13,24 @@
 #define DEFAULT_VALUE_DB 60
 #define MIN_VALUE_DB 30
 
+// Definições dos exemplos de som
 #define NUM_FAIXAS 4
-#define NUM_EXEMPLOS 3
+#define NUM_EXEMPLOS 4
 
 // Declarações de variáveis globais
-extern int valorDecibeis;
-extern bool menuActive;
+extern int valor_decibeis;
+extern bool menu_active;
 extern ssd1306_t ssd;
-extern const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS + 1];
+extern const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS];
 
 // Protótipos de funções
 void init_display(void);
 void all_options_config(void);
-void drawSoundMessage(const char *sound);
-void defineDraw(int nivelSound);
-void defineDrawInDisplayOfSound(int nivelSound);
-void drawMenuScreen(void);
-void menu_config(void);
+void define_draw_in_display_of_sound(int nivel_sound);
+void format_sound_message(const char *sound);
+void update_display_based_on_sound_level(int nivel_sound);
+void menu_config(int option);
+void menu_manual_config(void);
 bool debounce(uint gpio);
-char *intToString(int num);
-const char *randomSound(int nivelSound);
-void menu_config2();
+char *int_to_string(int num);
+const char *random_example_sound(int nivel_sound);

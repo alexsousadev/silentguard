@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include "hardware/adc.h"
 #include "mic.h"
-#include "modules/core/dma.h" // Nosso módulo DMA para o ADC
+#include "modules/core/dma.h"
 
 // Buffer para as amostras e configuração do DMA
 static uint16_t adc_buffer[SAMPLES];
 static dma_adc_config_t adc_dma_config;
 
 // Inicializa o Microfone
-void mic_init(void)
+void init_mic(void)
 {
     adc_gpio_init(MIC_PIN);
     adc_init();
@@ -26,27 +26,7 @@ void mic_init(void)
     dma_adc_init(&adc_dma_config);
 }
 
-// Ccalcular o RMS das amostras (média)
-float calculate_rms(void)
-{
-    float sum = 0.0;
-    for (int i = 0; i < SAMPLES; i++)
-    {
-        float voltage = (adc_buffer[i] - OFFSET) * (VREF / ADC_MAX);
-        sum += voltage * voltage;
-    }
-    return sqrt(sum / SAMPLES);
-}
-
-// Converte o valor de voltagem para dB
-float adc_to_db(float vrms)
-{
-    float vrms_with_gain = vrms * GAIN;
-    float adjusted_sensitivity = SENSITIVITY * 0.5; // Ajuste fino da sensibilidade
-    return 20 * log10(vrms_with_gain / adjusted_sensitivity);
-}
-
-// Pegando amostras pelo microfone
+// Mandando amostras via dma
 void sample_mic(void)
 {
     adc_fifo_drain();
@@ -57,22 +37,30 @@ void sample_mic(void)
     adc_run(false);
 }
 
-float read_mic(void)
+// Calcula o RMS (média dos valores de voltagem)
+float calculate_rms(const uint16_t *adc_buffer, uint32_t num_samples, float offset, float vref, float adc_max)
 {
-    float avg = 0.f;
-    for (uint i = 0; i < SAMPLES; i++)
+    float sum = 0.0;
+    for (uint32_t i = 0; i < num_samples; i++)
     {
-        printf("Valor: %d\n", adc_buffer[i]);
-        avg += adc_buffer[i];
+        float voltage = (adc_buffer[i] - offset) * (vref / adc_max);
+        sum += voltage * voltage;
     }
-    avg /= SAMPLES;
-    return avg;
+    return sqrt(sum / num_samples);
+}
+
+// Converte valor de voltagem para dB
+float adc_to_db(float vrms, float gain, float sensitivity)
+{
+    float vrms_with_gain = vrms * gain;
+    float adjusted_sensitivity = sensitivity * 0.5;
+    return 20 * log10(vrms_with_gain / adjusted_sensitivity);
 }
 
 // Função auxiliar que faz as leituras e traz o dB
 float mic_get_db(void)
 {
     sample_mic();
-    float rms = calculate_rms(); // Calculate RMS of the internal buffer
-    return adc_to_db(rms);
+    float rms = calculate_rms(adc_buffer, SAMPLES, OFFSET, VREF, ADC_MAX);
+    return adc_to_db(rms, GAIN, SENSITIVITY);
 }

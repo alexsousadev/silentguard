@@ -1,8 +1,9 @@
 #include "pico/stdlib.h"
-
 // Pinos dos botões A e B
-#define BUTTON_A 5
-#define BUTTON_B 6
+#define LED_B 12
+#define LED_R 13
+
+extern uint LEDs[2];
 
 // Protótipos de funções
-void init_buttons(void);
+void init_leds(void);
