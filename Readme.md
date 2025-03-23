@@ -1,12 +1,10 @@
 # SilentGuard
 
-![]("./example-silentguard.png")
-
 O SilentGuard é um dispositivo desenvolvido para o [BitDoLab](https://github.com/BitDogLab/BitDogLab), com o objetivo de monitorar o nível de ruído em ambientes como bibliotecas, hospitais e outros espaços silenciosos. Ele oferece uma solução prática para garantir que o nível de ruído permaneça dentro de limites aceitáveis, utilizando feedback visual e sonoro.
 
 ## Descrição do Funcionamento
 
-O **SilentGuard** utiliza um microfone para monitorar continuamente o nível de ruído no ambiente. Com base na leitura do ruído, o dispositivo fornece feedback visual através de uma matriz de LEDs, além de um display com informações adicionais. O utilizador pode definir um limite máximo de decibéis permitidos através de um menu de configuração, e o sistema reage de acordo com o nível de ruído definido.
+Ele utiliza um microfone para monitorar continuamente o nível de ruído no ambiente. Com base na leitura do ruído, o dispositivo fornece feedback visual através de uma matriz de LEDs, além de um display com informações adicionais. O utilizador pode definir um limite máximo de decibéis permitidos através de um menu de configuração, e o sistema reage de acordo com o nível de ruído definido.
 
 ## Componentes Principais
 
