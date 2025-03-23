@@ -1,6 +1,6 @@
 # SilentGuard
 
-O SilentGuard é um dispositivo desenvolvido para o [BitDoLab](https://github.com/BitDogLab/BitDogLab), com o objetivo de monitorar o nível de ruído em ambientes como bibliotecas, hospitais e outros espaços silenciosos. Ele oferece uma solução prática para garantir que o nível de ruído permaneça dentro de limites aceitáveis, utilizando feedback visual e sonoro.
+O SilentGuard é um dispositivo desenvolvido para o [BitDogLab](https://github.com/BitDogLab/BitDogLab), com o objetivo de monitorar o nível de ruído em ambientes como bibliotecas, hospitais e outros espaços silenciosos. Ele oferece uma solução prática para garantir que o nível de ruído permaneça dentro de limites aceitáveis, utilizando feedback visual e sonoro.
 
 ## Descrição do Funcionamento
 
