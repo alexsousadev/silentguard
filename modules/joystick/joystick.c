@@ -1,5 +1,4 @@
 #include "joystick.h"
-#include "modules/mic/mic.h"
 
 // Inicialização do Joystick
 void init_joystick()

@@ -1,8 +1,5 @@
-#include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/clocks.h"
-#include "hardware/gpio.h"
-#include "hardware/pwm.h"
+#include "modules/core/pwm.h"
 
 // Protótipos de funções
 void init_buzzer(void);

@@ -1,6 +1,4 @@
 #include "interruptions.h"
-#include "modules/joystick/joystick.h"
-#include "modules/matriz_leds/matriz_leds.h"
 
 volatile bool menu_requested = false;
 

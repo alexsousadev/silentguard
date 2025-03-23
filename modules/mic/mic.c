@@ -1,43 +1,45 @@
 #include <stdio.h>
-#include "hardware/adc.h"
+#include <math.h>
 #include "mic.h"
+#include "hardware/adc.h"
 #include "modules/core/dma.h"
 
-// Buffer para as amostras e configuração do DMA
+// Definição do buffer de amostras e da configuração do DMA
 static uint16_t adc_buffer[SAMPLES];
 static dma_adc_config_t adc_dma_config;
 
-// Inicializa o Microfone
+// Inicializa o microfone (ADC)
 void init_mic(void)
 {
     adc_gpio_init(MIC_PIN);
     adc_init();
     adc_select_input(MIC_CHANNEL);
 
-    // Configura o FIFO
+    // Configuração do FIFO
     adc_fifo_setup(
-        true,  // Habilita FIFO
-        true,  // Habilita armazenamento dos dados
-        1,     // Nível para disparo
+        true, // Habilita o FIFO
+        true, // Habilita armazenamento dos dados
+        1,
         false, // Sem trigger de erro
         false  // Sem byte swap
     );
 
+    // Inicializa a configuração do DMA
     dma_adc_init(&adc_dma_config);
 }
 
-// Mandando amostras via dma
+// Envia amostras para o DMA
 void sample_mic(void)
 {
-    adc_fifo_drain();
-    adc_run(false);
-    dma_adc_start_transfer(&adc_dma_config, adc_buffer, SAMPLES);
-    adc_run(true);
-    dma_adc_wait_for_finish(&adc_dma_config);
-    adc_run(false);
+    adc_fifo_drain();                                             // Drena o FIFO
+    adc_run(false);                                               // Desliga o ADC antes de iniciar a transferência
+    dma_adc_start_transfer(&adc_dma_config, adc_buffer, SAMPLES); // Inicia a transferência do DMA
+    adc_run(true);                                                // Liga o ADC para continuar a captura
+    dma_adc_wait_for_finish(&adc_dma_config);                     // Espera a transferência terminar
+    adc_run(false);                                               // Desliga o ADC após a transferência
 }
 
-// Calcula o RMS (média dos valores de voltagem)
+// Calcula o valor RMS (Root Mean Square) a partir das amostras
 float calculate_rms(const uint16_t *adc_buffer, uint32_t num_samples, float offset, float vref, float adc_max)
 {
     float sum = 0.0;
@@ -49,7 +51,7 @@ float calculate_rms(const uint16_t *adc_buffer, uint32_t num_samples, float offs
     return sqrt(sum / num_samples);
 }
 
-// Converte valor de voltagem para dB
+// Converte o valor RMS (V) para decibéis (dB)
 float adc_to_db(float vrms, float gain, float sensitivity)
 {
     float vrms_with_gain = vrms * gain;

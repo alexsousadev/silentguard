@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <pico/stdlib.h>
 #include <math.h>
 
 // Definições de constantes

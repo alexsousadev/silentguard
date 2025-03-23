@@ -1,5 +1,6 @@
 #include "pico/stdlib.h"
-// Pinos dos botões A e B
+
+// Pinos dos LEDs
 #define LED_B 12
 #define LED_R 13
 

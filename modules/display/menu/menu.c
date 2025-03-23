@@ -1,7 +1,8 @@
-#include "modules/display/menu/menu.h"
 #include "modules/mic/mic.h"
-#include "modules/joystick/joystick.h"
 #include "modules/display/display.h"
+#include "modules/display/menu/menu.h"
+#include "modules/joystick/joystick.h"
+#include "modules/buttons/buttons.h"
 
 #define CALIBRATION_DURATION_MS 5000     // Tempo de calibração (ms)
 #define CALIBRATION_CORRECTION_FACTOR 15 // Fator de correção para ajustar o valor de dB
@@ -62,15 +63,14 @@ void handle_automatic_config()
 
     ssd1306_draw_string(&ssd, "Ja pode sair", 20, 50);
     ssd1306_send_data(&ssd);
-    np_clear();
 }
 
 // Exibe e gerencia o menu manual de configuração
 void handle_manual_config()
 {
     menu_active = true;
-    ssd1306_clear_screen(&ssd);menu_manual_config
-    ();
+    ssd1306_clear_screen(&ssd);
+    menu_manual_config();
 
     while (menu_active)
     {
@@ -107,4 +107,79 @@ void select_option_config(bool is_automatic)
     {
         handle_manual_config();
     }
+}
+
+void define_option_of_menu_config(int option)
+{
+    ssd1306_clear_screen(&ssd);
+    ssd1306_draw_string(&ssd, "Config", 36, 10);
+    ssd1306_draw_string(&ssd, "--------", 30, 20);
+
+    ssd1306_draw_string(&ssd, (option == 0) ? "-" : " ", 10, 30);
+    ssd1306_draw_string(&ssd, "Manual", 30, 30);
+
+    ssd1306_draw_string(&ssd, (option == 1) ? "-" : " ", 10, 40);
+    ssd1306_draw_string(&ssd, "Auto", 30, 40);
+
+    ssd1306_send_data(&ssd);
+}
+
+// Controle das configurações do menu
+void all_options_config()
+{
+    int option = 0;
+    menu_active = true;
+    ssd1306_clear_screen(&ssd);
+    define_option_of_menu_config(option);
+
+    while (menu_active)
+    {
+        if (debounce(BUTTON_B)) // Botão B: muda entre opções
+        {
+            select_option_config(option);
+        }
+        else if (debounce(BUTTON_A)) // Botão A: alterna entre opções
+        {
+            option = !option;
+            define_option_of_menu_config(option);
+        }
+        else if (debounce(BUTTON_JOYSTICK)) // Botão Joystick: sai do menu
+        {
+            menu_active = false;
+            return;
+        }
+    }
+
+    ssd1306_clear_screen(&ssd);
+}
+
+// Desenha a tela de configuração do menu manual
+void menu_manual_config()
+{
+    ssd1306_clear_screen(&ssd);
+    ssd1306_draw_string(&ssd, "Config", 36, 10);
+    ssd1306_draw_string(&ssd, "--------", 30, 20);
+    ssd1306_draw_string(&ssd, "Volume:", 10, 30);
+    char *volume_str = int_to_string(valor_decibeis);
+    ssd1306_draw_string(&ssd, volume_str, 70, 30);
+    ssd1306_draw_string(&ssd, " dB", 95, 30);
+    free(volume_str);
+    ssd1306_send_data(&ssd);
+}
+
+// Tratar debounce de um botão
+bool debounce(uint gpio)
+{
+    static uint64_t last_press_time = 0;
+    uint64_t current_time = time_us_64();
+
+    if (gpio_get(gpio) == 0)
+    {
+        if ((current_time - last_press_time) > 200000)
+        {
+            last_press_time = current_time;
+            return true;
+        }
+    }
+    return false;
 }

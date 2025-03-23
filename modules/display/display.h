@@ -1,7 +1,7 @@
 #include <string.h>
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "modules/display/ssd1306.h"
-#include "modules/buttons/buttons.h"
 
 // Definições de pinos
 #define I2C_PORT i2c1
@@ -25,12 +25,8 @@ extern const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS];
 
 // Protótipos de funções
 void init_display(void);
-void all_options_config(void);
 void define_draw_in_display_of_sound(int nivel_sound);
 void format_sound_message(const char *sound);
 void update_display_based_on_sound_level(int nivel_sound);
-void menu_config(int option);
-void menu_manual_config(void);
-bool debounce(uint gpio);
 char *int_to_string(int num);
 const char *random_example_sound(int nivel_sound);

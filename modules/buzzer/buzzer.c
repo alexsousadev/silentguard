@@ -1,6 +1,5 @@
 
 #include "buzzer.h"
-#include "modules/core/pwm.h"
 
 #define BUZZER 21
 #define LOOP_BEEP 3

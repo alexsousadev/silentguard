@@ -1,18 +1,16 @@
-#include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/adc.h"
-#include "hardware/dma.h"
 #include "modules/matriz_leds/matriz_leds.h"
 #include "modules/buzzer/buzzer.h"
 #include "modules/display/display.h"
 #include "modules/joystick/joystick.h"
 #include "modules/interruptions/interruptions.h"
-#include "modules/core/dma.h"
 #include "modules/mic/mic.h"
+#include "modules/buttons/buttons.h"
 #include "modules/leds/leds.h"
+#include "modules/core/dma.h"
 
 //==============================================================================
-//                       DEFINIÇÕES E INCLUSÕES
+// Definições e inclusões
 //==============================================================================
 
 // Flags e tempos de aviso
@@ -30,16 +28,18 @@ uint64_t last_increment_time = 0;              // Tempo do último incremento de
 const uint64_t increment_cooldown_us = 500000; // Cooldown de 0.5 segundos para incremento
 
 //==============================================================================
-//                       PROTÓTIPOS DE FUNÇÕES
+// Protótipos de funções
 //==============================================================================
 
 void init_all_gpios();
 void define_action(float db_value);
 void warning_sound(int sound_level);
 void warning_loop();
+int define_noise_level(float avg_digital);
+void define_noise_flag(float avg_digital);
 
 //==============================================================================
-//                       FUNÇÕES DE INICIALIZAÇÃO
+// Funções de inicialização
 //==============================================================================
 
 // Inicializa todos os GPIOs: LEDs, display, buzzer
@@ -55,7 +55,7 @@ void init_all_gpios()
 }
 
 //==============================================================================
-//                       TRATAMENTO DO NÍVEL DE SOM E FLAGS
+// Tratamento do nível do som e flags
 //==============================================================================
 
 // Classifica nível de som (1: baixo, 2: médio, 3: alto)
@@ -105,7 +105,6 @@ void define_noise_flag(float avg_digital)
   // Atualiza com suavização exponencial (Exponential Moving Average)
   noise_flag_smoothed = noise_flag_smoothed * (1 - smoothing_factor) + target * smoothing_factor;
 
-  // Garante que o valor esteja dentro dos limites
   if (noise_flag_smoothed < min_flag_threshold)
     noise_flag_smoothed = min_flag_threshold;
   if (noise_flag_smoothed > max_flag_threshold)
@@ -124,16 +123,16 @@ void define_action(float db_value)
   if (max_warning_flag == 2)
   {
     gpio_put(LEDs[0], 0);
-    gpio_put(LEDs[1], 1);
+    gpio_put(LEDs[1], 1); // Vermelho
   }
   else if (noise_flag == 1 && max_warning_flag < 2)
   {
-    gpio_put(LEDs[0], 1); // Azul: Aviso de barulho
+    gpio_put(LEDs[0], 1); // Azul
     gpio_put(LEDs[1], 0);
   }
   else
   {
-    gpio_put(LEDs[0], 0);
+    gpio_put(LEDs[0], 0); // Apagado
     gpio_put(LEDs[1], 0);
   }
 
@@ -146,7 +145,7 @@ void define_action(float db_value)
 }
 
 //==============================================================================
-//                       AVISO SONORO E VISUAL
+// Aviso sonoro e visual
 //==============================================================================
 
 // Ações de aviso (display e som) por nível de som
@@ -187,12 +186,12 @@ void warning_loop()
     }
     sleep_ms(500);
 
-    define_draw_in_display_of_sound(4); // Nível 4: "Silencio" (alarme final)
+    define_draw_in_display_of_sound(4); // Nível 4: "Silencio"
   }
 }
 
 //==============================================================================
-//                       FUNÇÃO PRINCIPAL
+// Função Principal
 //==============================================================================
 int main()
 {
