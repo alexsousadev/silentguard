@@ -51,6 +51,9 @@
         "string.h": "c",
         "buttons.h": "c",
         "mic.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "pwm.h": "c",
+        "leds.h": "c",
+        "dma.h": "c"
     }
 }

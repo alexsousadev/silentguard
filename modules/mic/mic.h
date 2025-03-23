@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <pico/stdlib.h>
 #include <math.h>
 
 // Definições de constantes
@@ -13,9 +13,8 @@
 #define GAIN 20
 
 // Prototipo das funções
-void mic_init(void);
+void init_mic(void);
 void sample_mic(void);
-float read_mic(void);
-float calculate_rms(void); // Modified: No need to pass the buffer
-float adc_to_db(float vrms);
+float calculate_rms(const uint16_t *adc_buffer, uint32_t num_samples, float offset, float vref, float adc_max);
+float adc_to_db(float vrms, float gain, float sensitivity);
 float mic_get_db(void);

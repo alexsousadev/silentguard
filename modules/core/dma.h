@@ -9,6 +9,7 @@ typedef struct dma_adc_config
     dma_channel_config dma_cfg;
 } dma_adc_config_t;
 
+// Prototipos das funções
 bool dma_adc_init(dma_adc_config_t *config);
 void dma_adc_start_transfer(dma_adc_config_t *config, uint16_t *buffer, size_t sample_count);
 void dma_adc_wait_for_finish(dma_adc_config_t *config);

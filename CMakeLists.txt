@@ -58,9 +58,12 @@ add_executable(SilentGuard
     modules/interruptions/interruptions.c
     modules/matriz_leds/matriz_leds.c
     modules/buttons/buttons.c
+    modules/leds/leds.c
     modules/core/dma.c
     modules/mic/mic.c
     modules/display/menu/menu.c
+    modules/core/pwm.c
+
 )
 
 pico_set_program_name(SilentGuard "SilentGuard")
