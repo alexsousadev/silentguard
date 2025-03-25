@@ -156,7 +156,7 @@ void convert_piskel_to_matriz(uint32_t piskel_matriz[1][25], int pixel_draw[5][5
 }
 
 // Converte a matriz de pixels para LEDs
-void convert_matriz_to_led(int pixel_draw[5][5], int pixel_rgb[5][5][3])
+void convert_matriz_to_led(int pixel_draw[5][5], color color)
 {
   for (int i = 0; i < 5; i++)
   {
@@ -164,7 +164,10 @@ void convert_matriz_to_led(int pixel_draw[5][5], int pixel_rgb[5][5][3])
     {
       if (pixel_draw[i][j] == 1)
       {
-        np_set_led(matriz_leds[i][j], pixel_rgb[i][j][0], pixel_rgb[i][j][1], pixel_rgb[i][j][2]);
+        if (color == COLOR_BLUE)
+          np_set_led(matriz_leds[i][j], 0, 0, 100);
+        else
+          np_set_led(matriz_leds[i][j], 100, 0, 0);
       }
     }
   }
@@ -186,7 +189,7 @@ void happy_emoji()
        0x00000000, 0xff793600, 0xff793600, 0xff793600, 0x00000000}};
 
   convert_piskel_to_matriz(new_piskel_data, pixel_draw, pixel_rgb);
-  convert_matriz_to_led(pixel_draw, pixel_rgb);
+  convert_matriz_to_led(pixel_draw, COLOR_BLUE);
   np_write();
 }
 
@@ -202,6 +205,6 @@ void sad_emoji()
        0xff0000ff, 0x00000000, 0x00000000, 0x00000000, 0xff0000ff}};
 
   convert_piskel_to_matriz(new_piskel_data, pixel_draw, pixel_rgb);
-  convert_matriz_to_led(pixel_draw, pixel_rgb);
+  convert_matriz_to_led(pixel_draw, COLOR_RED);
   np_write();
 }
