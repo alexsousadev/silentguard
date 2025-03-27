@@ -50,7 +50,7 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(SilentGuard 
-    SilentGuard.c 
+    src/SilentGuard.c 
     modules/display/ssd1306.c 
     modules/display/display.c
     modules/joystick/joystick.c

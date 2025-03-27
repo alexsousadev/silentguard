@@ -6,10 +6,11 @@
 // Variáveis Globais
 //==============================================================================
 
-int valor_decibeis = 60; // Limite de dB configurável
+MenuConfig menu_config = {
+    .valor_decibeis = 60,
+    .menu_active = false};
 
-ssd1306_t ssd;            // Objeto do display
-bool menu_active = false; // Flag de menu ativo/inativo
+ssd1306_t ssd; // Objeto do display
 
 const char *niveis_ruido[NUM_FAIXAS][NUM_EXEMPLOS] = {
     // Nível 1 (≤60 dB) – Sons baixos

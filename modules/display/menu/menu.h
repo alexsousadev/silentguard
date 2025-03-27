@@ -1,9 +1,14 @@
-
 #include <stdio.h>
 #include <pico/stdlib.h>
 
-extern int all_sample_count;
-extern int all_sum_db;
+// Definições das variaveis para calibração
+typedef struct
+{
+    int all_sample_count;
+    int all_sum_db;
+} CalibrationConfig;
+
+extern CalibrationConfig calibration_config;
 
 // Prototipos das funções
 void all_options_config(void);

@@ -9,10 +9,8 @@ bool dma_adc_init(dma_adc_config_t *config)
     config->dma_channel = get_dma_channel();
     if (config->dma_channel == -1)
     {
-        printf("falou ligar dma");
         return false;
     }
-    printf("deu certo ligar");
     config->dma_cfg = dma_channel_get_default_config(config->dma_channel);
     channel_config_set_transfer_data_size(&config->dma_cfg, DMA_SIZE_16);
     channel_config_set_read_increment(&config->dma_cfg, false);

@@ -7,8 +7,9 @@
 #define CALIBRATION_DURATION_MS 5000     // Tempo de calibração (ms)
 #define CALIBRATION_CORRECTION_FACTOR 15 // Fator de correção para ajustar o valor de dB
 
-int all_sample_count = 0;
-int all_sum_db = 0;
+CalibrationConfig calibration_config = {
+    .all_sample_count = 0,
+    .all_sum_db = 0};
 
 // Função de intervalo de espera
 void create_interval(uint32_t interval, float sum_db, int sample_count)
@@ -20,8 +21,8 @@ void create_interval(uint32_t interval, float sum_db, int sample_count)
         sample_count++;
     }
 
-    all_sum_db = sum_db;
-    all_sample_count = sample_count;
+    calibration_config.all_sum_db = sum_db;
+    calibration_config.all_sample_count = sample_count;
 }
 
 // Exibe a mensagem de calibração
@@ -47,8 +48,8 @@ void handle_automatic_config()
     create_interval(CALIBRATION_DURATION_MS, sum_db, sample_count);
 
     // Calcula a média e aplica o fator de correção
-    ambient_average = (all_sum_db / all_sample_count) + CALIBRATION_CORRECTION_FACTOR;
-    valor_decibeis = ambient_average;
+    ambient_average = (calibration_config.all_sum_db / calibration_config.all_sample_count) + CALIBRATION_CORRECTION_FACTOR;
+    menu_config.valor_decibeis = ambient_average;
 
     // Exibe o resultado da calibração no display
     ssd1306_clear_screen(&ssd);
@@ -68,19 +69,19 @@ void handle_automatic_config()
 // Exibe e gerencia o menu manual de configuração
 void handle_manual_config()
 {
-    menu_active = true;
+    menu_config.menu_active = true;
     ssd1306_clear_screen(&ssd);
     menu_manual_config();
 
-    while (menu_active)
+    while (menu_config.menu_active)
     {
         // Botão B: aumenta dB
         if (debounce(BUTTON_B))
         {
-            valor_decibeis += VALUE_INCREMENT_VOLUME;
-            if (valor_decibeis >= 105)
+            menu_config.valor_decibeis += VALUE_INCREMENT_VOLUME;
+            if (menu_config.valor_decibeis >= 105)
             {
-                valor_decibeis = MIN_VALUE_DB;
+                menu_config.valor_decibeis = MIN_VALUE_DB;
             }
             menu_manual_config();
         }
@@ -88,7 +89,7 @@ void handle_manual_config()
         // Botão Joystick: sai do menu
         if (debounce(BUTTON_JOYSTICK))
         {
-            menu_active = false;
+            menu_config.menu_active = false;
         }
     }
 
@@ -128,11 +129,11 @@ void define_option_of_menu_config(int option)
 void all_options_config()
 {
     int option = 0;
-    menu_active = true;
+    menu_config.menu_active = true;
     ssd1306_clear_screen(&ssd);
     define_option_of_menu_config(option);
 
-    while (menu_active)
+    while (menu_config.menu_active)
     {
         if (debounce(BUTTON_B)) // Botão B: muda entre opções
         {
@@ -145,7 +146,7 @@ void all_options_config()
         }
         else if (debounce(BUTTON_JOYSTICK)) // Botão Joystick: sai do menu
         {
-            menu_active = false;
+            menu_config.menu_active = false;
             return;
         }
     }
@@ -160,7 +161,7 @@ void menu_manual_config()
     ssd1306_draw_string(&ssd, "Config", 36, 10);
     ssd1306_draw_string(&ssd, "--------", 30, 20);
     ssd1306_draw_string(&ssd, "Volume:", 10, 30);
-    char *volume_str = int_to_string(valor_decibeis);
+    char *volume_str = int_to_string(menu_config.valor_decibeis);
     ssd1306_draw_string(&ssd, volume_str, 70, 30);
     ssd1306_draw_string(&ssd, " dB", 95, 30);
     free(volume_str);

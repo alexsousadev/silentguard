@@ -1,11 +1,17 @@
 #include <pico/stdlib.h>
 #include <math.h>
 
-// Definições de constantes
+// Definições do pino e canal (ADC)
 #define MIC_CHANNEL 2
 #define MIC_PIN 28
 #define SAMPLES 100
 
+// Valores padrão para configurações do SOM
+#define VALUE_INCREMENT_VOLUME 5
+#define DEFAULT_VALUE_DB 60
+#define MIN_VALUE_DB 30
+
+// Especificações do Microfone
 #define ADC_MAX 4095
 #define VREF 3.3
 #define OFFSET 2048
